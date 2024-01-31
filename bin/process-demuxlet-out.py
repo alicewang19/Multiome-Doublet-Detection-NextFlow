@@ -141,7 +141,9 @@ fig, axs = plt.subplots(ncols=3, figsize=(5*3, 5))
 ax = axs[0]
 ax.set_title('RNA assignment')
 rna_counts = demuxlet.RNA.value_counts().reset_index()
-sns.barplot(x='RNA', y='index', ax=ax, data=rna_counts, palette=cmap, hue='index', dodge=False)
+rna_counts['percentage'] = (100*rna_counts.RNA/rna_counts.RNA.sum()).map(lambda x: round(x, 2))
+rna_counts['label'] = rna_counts['index'] + ' - ' + rna_counts.percentage.astype(str) + '%'
+sns.barplot(x='RNA', y='label', ax=ax, data=rna_counts, palette=cmap, hue='index', dodge=False)
 ax.legend().remove()
 ax.set_ylabel('')
 ax.set_xlabel('')
@@ -149,7 +151,9 @@ ax.set_xlabel('')
 ax = axs[1]
 ax.set_title('ATAC assignment')
 atac_counts = demuxlet.ATAC.value_counts().reset_index()
-sns.barplot(x='ATAC', y='index', ax=ax, data=atac_counts, palette=cmap, hue='index', dodge=False)
+atac_counts['percentage'] = (100*atac_counts.ATAC/atac_counts.ATAC.sum()).map(lambda x: round(x, 2))
+atac_counts['label'] = atac_counts['index'] + ' - ' + atac_counts.percentage.astype(str) + '%'
+sns.barplot(x='ATAC', y='label', ax=ax, data=atac_counts, palette=cmap, hue='index', dodge=False)
 ax.legend().remove()
 ax.set_ylabel('')
 ax.set_xlabel('')
