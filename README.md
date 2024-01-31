@@ -25,15 +25,15 @@ You'll need to provide a config.json file like this:
 }
 ```
 
-You'll also need to update the file paths in the `nextflow.config` file in this directory.
+You'll also need to update the reference file paths in the `nextflow.config` file in this directory.
 
 Then run the pipeline:
 
 ```bin
-nextflow run -resume -params-file config.json --results /path/to/results /path/to/Multiome-Doublet-Detection-NextFlow/main.nf
+nextflow run -resume -params-file config.json --atac_barcodes /path/to/snATACseq-NextFlow/737K-arc-v1.txt --rna_barcodes /path/to/snRNAseq-NextFlow/737K-arc-v1.txt --results /path/to/results /path/to/Multiome-Doublet-Detection-NextFlow/main.nf
 ```
 
-You may wish to run under nohup so that the pipeline continues to run in the background and does not terminate upon logging out of the server (`nohup nextflow run ... &`)
+Where `--atac_barcodes` and `--rna_barcodes` are the barcode whitelists for the two modalities.
 
 ## Output
 
