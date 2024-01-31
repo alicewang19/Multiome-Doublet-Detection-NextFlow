@@ -152,10 +152,12 @@ process chunk_demuxlet_barcodes {
 process demuxlet {
 
     container 'library://porchard/default/demuxlet:20220204'
-    memory '10 GB'
     cache 'lenient'
     tag "${library} ${modality}"
     time '48h'
+    memory { 20.GB * task.attempt }
+    maxRetries 3
+    errorStrategy {task.attempt <= maxRetries ? 'retry' : 'ignore'}
 
     input:
     tuple val(library), path(bam), path(bam_index), val(modality), path(barcodes), path(vcf)
@@ -210,7 +212,6 @@ process plot_demuxlet {
 
 process prep_doublet_detection {
 
-    publishDir "${params.results}/atac-doublet-detection"
     tag "${library}"
     container "library://porchard/default/general:20220107"
 
@@ -229,7 +230,7 @@ process prep_doublet_detection {
 
 process run_atac_doublet_detection {
 
-    publishDir "${params.results}/atac-doublet-detection"
+    publishDir "${params.results}/amulet"
     tag "${library}"
     container 'library://porchard/default/amulet:1.1'
     memory '10 GB'
@@ -238,12 +239,14 @@ process run_atac_doublet_detection {
     tuple val(library), path(bam), path(bam_index), path(single_cell), path(autosomes), path(blacklists)
 
     output:
-    tuple val(library), path("${library}.doublet_probabilities.txt")
+    tuple val(library), path("${library}.doublet_probabilities.txt"), emit: probs
+    tuple val(library), path("${library}")
 
     """
     mkdir -p output
     zcat ${blacklists.join(' ')} | sort -k1,1 -k2n,2 > blacklist.bed
     /opt/AMULET/AMULET.sh --bcidx 0 --cellidx 1 --iscellidx 2 $bam $single_cell $autosomes blacklist.bed output/ /opt/AMULET/
+    cp -r output ${library}
     cp output/MultipletProbabilities.txt ${library}.doublet_probabilities.txt
     """
 
@@ -252,7 +255,7 @@ process run_atac_doublet_detection {
 
 process plot_doublet_probabilities {
 
-    publishDir "${params.results}/atac-doublet-detection"
+    publishDir "${params.results}/amulet"
     tag "${library}"
     container "library://porchard/default/general:20220107"
     memory '10 GB'
@@ -463,8 +466,7 @@ workflow {
     demuxlet_assignments = demuxlet_out_atac.combine(demuxlet_out_rna, by: 0).combine(Channel.fromPath(params.rna_barcodes)).combine(Channel.fromPath(params.atac_barcodes)) | plot_demuxlet
 
     // amulet
-    dd = atac_bam.combine(prep_doublet_detection(atac_pass_qc_barcodes.combine(Channel.fromPath(params.atac_barcodes))), by: 0).map({it -> it + [get_blacklists(get_genome(it[0])).collect({x -> file(x)})]}) | run_atac_doublet_detection
-    //dd.map({it -> it + [file(params.libraries[it[0]].atac_qc), file(params.rna_barcodes), file(params.atac_barcodes)]}) | plot_doublet_probabilities
+    amulet = atac_bam.combine(prep_doublet_detection(atac_pass_qc_barcodes.combine(Channel.fromPath(params.atac_barcodes))), by: 0).map({it -> it + [get_blacklists(get_genome(it[0])).collect({x -> file(x)})]}) | run_atac_doublet_detection
 
     // doubletfinder
     cluster_per_library(nuclei)
@@ -475,8 +477,8 @@ workflow {
     // check if VCF was provided for all libraries
     RUN_DEMUXLET_FOR_ALL_LIBRARIES = !(libraries.collect({it -> params.libraries[it].vcf}).contains('None'))
     if (RUN_DEMUXLET_FOR_ALL_LIBRARIES) {
-        plot_doublets_in_clustering_demuxlet(joint_clustering_round_1.umap, joint_clustering_round_1.clusters, Channel.fromPath(params.rna_barcodes), Channel.fromPath(params.atac_barcodes), df.map({it -> it[1]}).toSortedList(), dd.map({it -> it[1]}).toSortedList(), demuxlet_assignments.assignments.map({it -> it[1]}).toSortedList())
+        plot_doublets_in_clustering_demuxlet(joint_clustering_round_1.umap, joint_clustering_round_1.clusters, Channel.fromPath(params.rna_barcodes), Channel.fromPath(params.atac_barcodes), df.map({it -> it[1]}).toSortedList(), amulet.probs.map({it -> it[1]}).toSortedList(), demuxlet_assignments.assignments.map({it -> it[1]}).toSortedList())
     } else {
-        plot_doublets_in_clustering(joint_clustering_round_1.umap, joint_clustering_round_1.clusters, Channel.fromPath(params.rna_barcodes), Channel.fromPath(params.atac_barcodes), df.map({it -> it[1]}).toSortedList(), dd.map({it -> it[1]}).toSortedList())
+        plot_doublets_in_clustering(joint_clustering_round_1.umap, joint_clustering_round_1.clusters, Channel.fromPath(params.rna_barcodes), Channel.fromPath(params.atac_barcodes), df.map({it -> it[1]}).toSortedList(), amulet.probs.map({it -> it[1]}).toSortedList())
     }
 }
