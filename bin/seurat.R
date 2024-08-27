@@ -62,7 +62,7 @@ mm <- load_mm(RNA_MTX, RNA_FEATURES, RNA_BARCODES)
 #metadata <- data.frame(nucleus=colnames(mm), library=gsub('_.*', '', colnames(mm)))
 #rownames(metadata) <- metadata$nucleus
 
-rna <- CreateSeuratObject(counts = mm, min.cells=5, min.features=50, assay = "RNA", project='RNA')
+rna <- CreateSeuratObject(counts = mm, min.cells=5, min.features=5, assay = "RNA", project='RNA')
 
 #### either use scTransform...
 if (SCTRANSFORM) {
@@ -107,14 +107,14 @@ if (length(MARKERS) > 0) {
     #dev.off()
     for(i in PLOT_FEATURES) {
         tryCatch(
-            {png(glue('{PREFIX}markers.{i}.png'), height=6, width=7, units='in', res=300)
+            {png(gsub(' ', '_', glue('{PREFIX}markers.{i}.scatter.png')), height=6, width=7, units='in', res=300)
             print(FeaturePlot(rna, i, pt.size = 0.1, order=F))
             dev.off()},
             warning=function(x){print('failed')},
             error=function(x){print('failed')}
         )
         tryCatch(
-            {png(glue('{PREFIX}markers.{i}.violin.png'), height=6, width=7, units='in', res=300)
+            {png(gsub(' ', '_', glue('{PREFIX}markers.{i}.violin.png')), height=6, width=7, units='in', res=300)
             print(VlnPlot(rna, features=i))
             dev.off()},
             warning=function(x){print('failed')},
