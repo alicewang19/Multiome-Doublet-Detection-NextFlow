@@ -45,12 +45,11 @@ nextflow run -resume --library_info library_info.tsv --rna_barcodes /path/to/snR
 
 
 ## Output
-# TODO: update
-* `atac-doublet-detection`: Doublet detection results based on AMULET, including lists of singlet RNA/ATAC barcodes (to be used for downstream analysis)
+* `amulet`: Doublet detection results based on AMULET, including lists of singlet RNA/ATAC barcodes (to be used for downstream analysis)
+* `cluster`: Seurat clustering results, with doublets included
 * `demuxlet/out`: Raw demuxlet output files for each library and modality
 * `demuxlet/processed`: List of demuxlet --> doublet / singlet (+ individual) assignments, and plots of demuxlet assignments and ATAC / RNA concordance
 * `doubletfinder`: Doublet detection results based on DoubletFinder
-* `cluster`: Seurat clustering results, with doublets included
+* `doublets-in-clustering`: Plots of doublet vs singlet nuclei in joint clustering
 * `merged-counts`: Input RNA count matrix for joint clustering
 * `pass-qc-nuclei-counts-with-doublets`: Input RNA count matrix for clustering of individual libraries
-* `doublets-in-clustering`: Plots of doublet vs singlet nuclei in joint clustering
