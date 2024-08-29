@@ -32,13 +32,6 @@ option_parser <- OptionParser(usage = "usage: Rscript %prog [options]", option_l
 opts <- parse_args(option_parser)
 
 
-#RNA_MTX <- '/lab/work/porchard/2022-01-rat-multiome/work/clean/results/pass-qc-nuclei-counts/5203-NM-2-rn6_eGFP_ACADSB.matrix.mtx'
-#RNA_FEATURES <- '/lab/work/porchard/2022-01-rat-multiome/work/clean/results/pass-qc-nuclei-counts/5203-NM-2-rn6_eGFP_ACADSB.features.tsv'
-#RNA_BARCODES <- '/lab/work/porchard/2022-01-rat-multiome/work/clean/results/pass-qc-nuclei-counts/5203-NM-2-rn6_eGFP_ACADSB.barcodes.tsv'
-#RESOLUTION <- 0.1
-#PCS <- 25
-#MARKERS <- opts$markers
-
 RNA_MTX <- opts$matrix
 RNA_FEATURES <- opts$features
 RNA_BARCODES <- opts$barcodes
@@ -51,28 +44,9 @@ SCTRANSFORM <- opts$sctransform
 
 mm <- load_mm(RNA_MTX, RNA_FEATURES, RNA_BARCODES)
 
-# restrict to protein-coding, autosomal genes?
-#DROP <- grep('\\(LOC', rownames(mm), value=T)
-#DROP <- c(DROP, grep('\\(AAB', rownames(mm), value=T))
-#DROP <- c(DROP, grep('\\(RF', rownames(mm), value=T))
-#DROP <- c(DROP, grep('\\(Mt', rownames(mm), value=T))
-#mm <- mm[!rownames(mm) %in% DROP,]
-#length(DROP)
+rna <- CreateSeuratObject(counts = mm, min.cells=5, min.features=5)
 
-
-#metadata <- data.frame(nucleus=colnames(mm), library=gsub('_.*', '', colnames(mm)))
-#rownames(metadata) <- metadata$nucleus
-
-rna <- CreateSeuratObject(counts = mm, min.cells=5, min.features=50)
-
-#### either use scTransform...
 if (SCTRANSFORM) {
-    # regressing out % mito
-    #rna <- PercentageFeatureSet(rna, pattern = '\\(MT-', col.name = "percent.mt")
-    #VlnPlot(rna, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
-    #rna <- SCTransform(rna, vars.to.regress = "percent.mt", verbose = FALSE)
-
-    # or not
     rna <- SCTransform(rna, verbose = FALSE)
 } else {
     rna <- NormalizeData(rna, verbose=F)
@@ -99,12 +73,8 @@ rna <- RunUMAP(rna, dims=1:PCS)
 rna <- FindNeighbors(rna, dims = 1:PCS, k.param = 20)
 rna <- FindClusters(rna, resolution = RESOLUTION, n.start = 100)
 
-#MARKERS <- c('Myh7', 'Myh1', 'Myh2', 'Vwf', 'Pax7', 'Ptprc', 'Myh11', 'Myh3', 'Myh4', 'Fbn1', 'Pdgfra', 'Acta2')
 if (length(MARKERS) > 0) {
     PLOT_FEATURES <- unlist(lapply(glue('\\({MARKERS}\\)'), function(x){grep(x, rownames(mm), value=T, ignore.case=T)}))
-    #png(glue('{PREFIX}marker-genes.png'), height=4*sqrt(length(PLOT_FEATURES)), width=1+4*sqrt(length(PLOT_FEATURES)), units='in', res=300)
-    #print(FeaturePlot(rna, PLOT_FEATURES, pt.size = 0.1, order=F))
-    #dev.off()
     for(i in PLOT_FEATURES) {
         tryCatch(
             {png(glue('{PREFIX}markers.{i}.png'), height=6, width=7, units='in', res=300)
@@ -122,9 +92,6 @@ if (length(MARKERS) > 0) {
         )
     }
 }
-
-
-
 
 
 
