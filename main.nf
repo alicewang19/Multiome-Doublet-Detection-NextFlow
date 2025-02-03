@@ -191,7 +191,6 @@ process demuxlet {
     time '48h'
     memory { 20.GB * task.attempt }
     maxRetries 3
-    errorStrategy {task.attempt <= maxRetries ? 'retry' : 'ignore'}
 
     input:
     tuple val(library), path(bam), path(bam_index), val(modality), path(barcodes), path(vcf)
