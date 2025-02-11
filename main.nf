@@ -24,7 +24,7 @@ def get_blacklists (genome) {
 
 process make_cellbender_mm {
 
-    memory '30 GB'
+    memory '96 GB'
     tag "${library}"
     container 'docker://porchard/general:20220406125608'
 
@@ -105,7 +105,7 @@ process index_bam_rna {
 // only if doing demuxlet
 process clip_bam {
 
-    memory '22 GB'
+    memory '32 GB'
     cache 'lenient'
     tag "${library}"
     container 'library://porchard/default/general:20220107'
@@ -155,7 +155,7 @@ process demuxlet {
     cache 'lenient'
     tag "${library} ${modality}"
     time '48h'
-    memory { 20.GB * task.attempt }
+    memory { 32.GB * task.attempt }
     maxRetries 3
     errorStrategy {task.attempt <= maxRetries ? 'retry' : 'ignore'}
 
@@ -233,7 +233,7 @@ process run_atac_doublet_detection {
     publishDir "${params.results}/amulet"
     tag "${library}"
     container 'library://porchard/default/amulet:1.1'
-    memory '10 GB'
+    memory '16 GB'
 
     input:
     tuple val(library), path(bam), path(bam_index), path(single_cell), path(autosomes), path(blacklists)
@@ -371,7 +371,7 @@ process cluster_joint_with_doublets {
     memory '450 GB'
     time '10h'
     container 'library://porchard/default/r-general:20220112'
-    clusterOptions '--account=scjp0 --partition=largemem'
+    clusterOptions '--account=scjp99 --partition=largemem'
     errorStrategy 'ignore'
 
     input:
